@@ -1,5 +1,6 @@
 import json
 from rest_framework.decorators import api_view
+from rest_framework import status
 from django.http import JsonResponse
 from django.templatetags.static import static
 from rest_framework.response import Response
@@ -60,17 +61,23 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-    data = json.loads(request.body.decode())
-
-    order = Order.objects.create(
-        firstname = data["firstname"],
-        lastname=data["lastname"],
-        phonenumber = data["phonenumber"],
-        address = data["address"],
-    )
-    for product in data["products"]:
-        order.orders.create(
-            product=Product.objects.get(id=product["product"]),
-            count=product["quantity"],
+    request = request.data
+    if not request.get("products"):
+        return Response({"error": "products: Этот список не может быть пустым и не может быть null или его нет"}, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(request.get("products"),list):
+        return Response({"error": "PRODUCT isn't list!!!!!!!!!!"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        order = Order.objects.create(
+            firstname = request.get("firstname"),
+            lastname=request.get("lastname"),
+            phonenumber = request.get("phonenumber"),
+            address = request.get("address"),
         )
-    return Response()
+        for product in request.get("products"):
+            order.orders.create(
+                product=Product.objects.get(id=product.get("product")),
+                count=product.get("quantity"),
+            )
+        return Response({"status":"200"})
+    except ValueError:
+        return Response({"error": "ValueError"},status=status.HTTP_400_BAD_REQUEST)

@@ -6,7 +6,7 @@ media/
 __pycache__/
 *.py[cod]
 *$py.class
-
+star-burger-products/
 # C extensions
 *.so
 
