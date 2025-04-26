@@ -34,7 +34,13 @@ def register_order(request):
     )
     products = [OrderElement(order=order, **fields) for fields in products_field]
     OrderElement.objects.bulk_create(products)
-    return Response({"order_id": order.id})
+    return Response({
+        "id": order.id,
+        "firstname": order.firstname,
+        "lastname": order.lastname,
+        "phonenumber": str(order.phonenumber),
+        "address": order.address,
+    })
 
 
 def banners_list_api(request):
