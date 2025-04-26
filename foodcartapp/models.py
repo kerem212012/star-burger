@@ -136,7 +136,7 @@ class Order(models.Model):
         verbose_name = 'Заказ'
         verbose_name_plural = 'Заказы'
 
-class OrderElements(models.Model):
+class OrderElement(models.Model):
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
@@ -145,12 +145,11 @@ class OrderElements(models.Model):
     )
     product = models.ForeignKey(
         Product,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         verbose_name="товар",
         related_name="products",
-        null=True,
     )
-    count = models.IntegerField(verbose_name="Количество")
+    quantity = models.IntegerField(verbose_name="Количество")
 
     class Meta:
         verbose_name = 'Элемент заказа'

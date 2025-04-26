@@ -1,11 +1,40 @@
 from django.http import JsonResponse
 from django.templatetags.static import static
-from phonenumber_field.phonenumber import PhoneNumber
-from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.serializers import ModelSerializer
 
-from .models import Product, Order
+from .models import Product, Order, OrderElement
+
+
+class OrderElementSerializer(ModelSerializer):
+    class Meta:
+        model = OrderElement
+        fields = ['product', 'quantity', ]
+
+
+class OrderSerializer(ModelSerializer):
+    products = OrderElementSerializer(many=True, write_only=True,allow_empty=False)
+
+    class Meta:
+        model = Order
+        fields = ['firstname', 'lastname', 'phonenumber', 'address', 'id', 'products', ]
+
+
+@api_view(['POST'])
+def register_order(request):
+    serializer = OrderSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    products_field = serializer.validated_data["products"]
+    order = Order.objects.create(
+        firstname=serializer.validated_data["firstname"],
+        lastname=serializer.validated_data["lastname"],
+        phonenumber=serializer.validated_data["phonenumber"],
+        address=serializer.validated_data["address"],
+    )
+    products = [OrderElement(order=order, **fields) for fields in products_field]
+    OrderElement.objects.bulk_create(products)
+    return Response({"order_id": order.id})
 
 
 def banners_list_api(request):
@@ -58,46 +87,3 @@ def product_list_api(request):
         'ensure_ascii': False,
         'indent': 4,
     })
-
-
-@api_view(['POST'])
-def register_order(request):
-    request = request.data
-    if not request.get("products") or not isinstance(request.get("products"), list):
-        return Response({"error": "products: Этот list не может быть пустым и не может быть null или его нет"},
-                        status=status.HTTP_400_BAD_REQUEST)
-    product_count = Product.objects.count()
-    for product in request.get("products"):
-        if not 0 <= product["product"] <= product_count:
-            return Response({"error": f"products: Недопустимый первичный ключ {product["product"]}"},
-                            status=status.HTTP_400_BAD_REQUEST)
-    if not request.get("firstname") or not isinstance(request.get("firstname"), str):
-        return Response({"error": "firstname: Этот str не может быть пустым и не может быть null или его нет"},
-                        status=status.HTTP_400_BAD_REQUEST)
-    if not request.get("lastname") or not isinstance(request.get("lastname"), str):
-        return Response({"error": "lastname: Этот str не может быть пустым и не может быть null или его нет"},
-                        status=status.HTTP_400_BAD_REQUEST)
-    if not request.get("phonenumber") or not isinstance(request.get("phonenumber"), str):
-        return Response({"error": "phonenumber: Этот str не может быть пустым и не может быть null или его нет"},
-                        status=status.HTTP_400_BAD_REQUEST)
-    elif not PhoneNumber.from_string(phone_number=request.get("phonenumber"), region="RU").is_valid():
-        return Response({"error": "phonenumber: Введен некорректный номер телефона"},
-                        status=status.HTTP_400_BAD_REQUEST)
-    if not request.get("address") or not isinstance(request.get("address"), str):
-        return Response({"error": "address: Этот str не может быть пустым и не может быть null или его нет"},
-                        status=status.HTTP_400_BAD_REQUEST)
-    try:
-        order = Order.objects.create(
-            firstname=request.get("firstname"),
-            lastname=request.get("lastname"),
-            phonenumber=request.get("phonenumber"),
-            address=request.get("address"),
-        )
-        for product in request.get("products"):
-            order.orders.create(
-                product=Product.objects.get(id=product.get("product")),
-                count=product.get("quantity"),
-            )
-        return Response({"status": "200"})
-    except ValueError:
-        return Response({"error": "ValueError"}, status=status.HTTP_400_BAD_REQUEST)
