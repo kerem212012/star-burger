@@ -149,6 +149,7 @@ class OrderElement(models.Model):
         verbose_name="товар",
         related_name="products",
     )
+    price = models.DecimalField(verbose_name="цена заказа",max_digits=8,decimal_places=2,validators=[MinValueValidator(0)],default=0)
     quantity = models.IntegerField(verbose_name="Количество")
 
     class Meta:
