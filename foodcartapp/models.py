@@ -1,5 +1,5 @@
-from django.db import models
 from django.core.validators import MinValueValidator
+from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
 
@@ -122,12 +122,20 @@ class RestaurantMenuItem(models.Model):
     def __str__(self):
         return f"{self.restaurant.name} - {self.product.name}"
 
-class Order(models.Model):
-    firstname = models.CharField(max_length=20,verbose_name="Имя")
-    lastname = models.CharField(max_length=20,verbose_name="Фамилия")
-    phonenumber = PhoneNumberField(region="RU",db_index=True,verbose_name="Телефон")
-    address = models.TextField(verbose_name="Адрес доставки")
 
+class Order(models.Model):
+    class StatusChoice(models.TextChoices):
+        MANAGER = "M", "Передан менеджеру"
+        RESTAURANT = "R", "Передан ресторану"
+        COURIER = "C", "Передан курьеру"
+        PROCESSED = "P", "Обработанный"
+
+    status = models.CharField(max_length=1, choices=StatusChoice.choices, verbose_name="Статус", db_index=True,
+                              default=StatusChoice.MANAGER)
+    firstname = models.CharField(max_length=20, verbose_name="Имя")
+    lastname = models.CharField(max_length=20, verbose_name="Фамилия")
+    phonenumber = PhoneNumberField(region="RU", db_index=True, verbose_name="Телефон")
+    address = models.TextField(verbose_name="Адрес доставки")
 
     def __str__(self):
         return f"{self.firstname} {self.lastname}"
@@ -135,6 +143,7 @@ class Order(models.Model):
     class Meta:
         verbose_name = 'Заказ'
         verbose_name_plural = 'Заказы'
+
 
 class OrderElement(models.Model):
     order = models.ForeignKey(
@@ -149,11 +158,10 @@ class OrderElement(models.Model):
         verbose_name="товар",
         related_name="products",
     )
-    price = models.DecimalField(verbose_name="цена заказа",max_digits=8,decimal_places=2,validators=[MinValueValidator(0)],default=0)
+    price = models.DecimalField(verbose_name="цена заказа", max_digits=8, decimal_places=2,
+                                validators=[MinValueValidator(0)], default=0)
     quantity = models.IntegerField(verbose_name="Количество")
 
     class Meta:
         verbose_name = 'Элемент заказа'
         verbose_name_plural = 'Элементы заказа'
-
-

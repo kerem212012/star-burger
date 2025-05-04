@@ -91,7 +91,7 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    order_items = Order.objects.all().annotate(total_price=F("orders__price")).order_by("-id")
+    order_items = Order.objects.filter(status__in=["M","R","C",]).annotate(total_price=F("orders__price")).order_by("status","id")
     return render(request, template_name='order_items.html', context={
         'order_items': order_items,
     })
