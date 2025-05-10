@@ -131,6 +131,10 @@ class Order(models.Model):
         COURIER = "C", "Передан курьеру"
         PROCESSED = "P", "Обработанный"
 
+    class PaymentChoice(models.TextChoices):
+        CASH = "C", "Наличные"
+        NONCASH = "N", "Безналичные"
+
     status = models.CharField(max_length=1, choices=StatusChoice.choices, verbose_name="Статус", db_index=True,
                               default=StatusChoice.MANAGER)
     firstname = models.CharField(max_length=20, verbose_name="Имя")
@@ -141,6 +145,8 @@ class Order(models.Model):
     registered_at = models.DateTimeField(verbose_name="Зарегистрирован в", default=timezone.now)
     called_at = models.DateTimeField(verbose_name="Позвонили в", db_index=True, blank=True, null=True)
     delivered_at = models.DateTimeField(verbose_name="Доставлен в", db_index=True, blank=True, null=True)
+    payment = models.CharField(max_length=1, choices=PaymentChoice.choices, verbose_name="Способ оплаты", db_index=True,
+                               default=PaymentChoice.CASH)
 
 
 def __str__(self):
