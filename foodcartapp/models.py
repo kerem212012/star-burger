@@ -136,6 +136,7 @@ class Order(models.Model):
     lastname = models.CharField(max_length=20, verbose_name="Фамилия")
     phonenumber = PhoneNumberField(region="RU", db_index=True, verbose_name="Телефон")
     address = models.TextField(verbose_name="Адрес доставки")
+    comment = models.TextField(max_length=200, verbose_name="Комментарий", blank=True)
 
     def __str__(self):
         return f"{self.firstname} {self.lastname}"
