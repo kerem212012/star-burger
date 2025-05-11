@@ -124,6 +124,18 @@ class RestaurantMenuItem(models.Model):
         return f"{self.restaurant.name} - {self.product.name}"
 
 
+class OrderQuerySet(models.QuerySet):
+    def get_restaurants_for_order(self):
+        menu_items = RestaurantMenuItem.objects.filter(availability=True).select_related("restaurant", "product")
+        for order in self:
+            restaurant = []
+            for ordered_product in order.orders.values("product"):
+                restaurant.append([menu_item.restaurant for menu_item in menu_items
+                                   if ordered_product["product"] == menu_item.product.id])
+            order.selected_restaurants = restaurant[0]
+        return self
+
+
 class Order(models.Model):
     class StatusChoice(models.TextChoices):
         MANAGER = "M", "Передан менеджеру"
@@ -147,15 +159,17 @@ class Order(models.Model):
     delivered_at = models.DateTimeField(verbose_name="Доставлен в", db_index=True, blank=True, null=True)
     payment = models.CharField(max_length=1, choices=PaymentChoice.choices, verbose_name="Способ оплаты", db_index=True,
                                default=PaymentChoice.CASH)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, verbose_name="ресторан", blank=True, null=True,
+                                   related_name="restaurants")
 
+    objects = OrderQuerySet.as_manager()
 
-def __str__(self):
-    return f"{self.firstname} {self.lastname}"
+    def __str__(self):
+        return f"{self.firstname} {self.lastname}"
 
-
-class Meta:
-    verbose_name = 'Заказ'
-    verbose_name_plural = 'Заказы'
+    class Meta:
+        verbose_name = 'Заказ'
+        verbose_name_plural = 'Заказы'
 
 
 class OrderElement(models.Model):
