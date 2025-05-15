@@ -162,6 +162,7 @@ class Order(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, verbose_name="ресторан", blank=True, null=True,
                                    related_name="restaurants")
 
+
     objects = OrderQuerySet.as_manager()
 
     def __str__(self):

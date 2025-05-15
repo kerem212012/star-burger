@@ -39,10 +39,12 @@
       <td>{{ item.comment }}</td>
       <td>{% if item.restaurant %}
             <p>Готовит</p>{{ item.restaurant.name }}
+          {% elif not item.selected_restaurants %}
+            <p>Ошибка определения координат</p>
           {% else %}
             <details style="cursor:pointer">
               <summary>Может быть приготовлен ресторанами:</summary>
-                {% for restaurant in item.selected_restaurants %} <li> {{ restaurant.name }} </li>
+                {% for restaurant in item.selected_restaurants %} <li> {{ restaurant.restaurant }} {{ restaurant.distance }} km </li>
                 {% endfor %}
             </details>
           {% endif %}

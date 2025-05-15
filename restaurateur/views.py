@@ -7,6 +7,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
 
+from restaurateur.func import calculate_distance
 from foodcartapp.models import Product, Restaurant, Order
 
 
@@ -93,6 +94,15 @@ def view_restaurants(request):
 def view_orders(request):
     orders = Order.objects.filter(status__in=["M", "R", "C", ]).annotate(total_price=F("orders__price")).order_by(
         "status", "id").select_related("restaurant", ).get_restaurants_for_order()
+    suitable_restaurants = []
+    for order in orders:
+        for restaurant in order.selected_restaurants:
+            distance = calculate_distance(order.address,restaurant)
+            if distance is None:
+                order.selected_restaurants = None
+                break
+            suitable_restaurants.append({"distance": round(distance,3),"restaurant":restaurant.name})
+        order.selected_restaurants = sorted(suitable_restaurants,key=lambda x: ["distance"])
     for order in orders:
         if order.status == "M" and order.restaurant:
             order.status = "R"
