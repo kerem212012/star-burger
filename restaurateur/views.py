@@ -6,9 +6,11 @@ from django.db.models import F
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
+from geopy.distance import distance
 
-from restaurateur.func import calculate_distance
+from location.func import get_coordinates
 from foodcartapp.models import Product, Restaurant, Order
+from location.models import Location
 
 
 class Login(forms.Form):
@@ -95,13 +97,19 @@ def view_orders(request):
     orders = Order.objects.filter(status__in=["M", "R", "C", ]).annotate(total_price=F("orders__price")).order_by(
         "status", "id").select_related("restaurant", ).get_restaurants_for_order()
     suitable_restaurants = []
+    locations = Location.objects.all()
+    restaurant_locations = {}
+    for restaurant in Restaurant.objects.all():
+        location = get_coordinates(restaurant.address,locations)
+        restaurant_locations[restaurant] = location
     for order in orders:
+        order_location = get_coordinates(order.address, locations)
         for restaurant in order.selected_restaurants:
-            distance = calculate_distance(order.address,restaurant)
-            if distance is None:
+            restaurant_location = restaurant_locations.get(restaurant)
+            if restaurant_location is None or order_location is None:
                 order.selected_restaurants = None
                 break
-            suitable_restaurants.append({"distance": round(distance,3),"restaurant":restaurant.name})
+            suitable_restaurants.append({"distance": round(distance(order_location,restaurant_location).km,3),"restaurant":restaurant.name})
         order.selected_restaurants = sorted(suitable_restaurants,key=lambda x: ["distance"])
     for order in orders:
         if order.status == "M" and order.restaurant:
